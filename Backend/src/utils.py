@@ -1,4 +1,8 @@
 import re
+from io import BytesIO
+
+def get_file_buffer(fileBytes) -> BytesIO:
+    return BytesIO(fileBytes)
 
 def structure_text(raw_text: str) -> list[list]:
     """Structures raw text into structured strings"""
