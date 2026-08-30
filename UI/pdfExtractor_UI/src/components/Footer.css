@@ -1,0 +1,17 @@
+.site-footer {
+  border-top: 1px solid #e2e2e2;
+  margin-top: auto;
+  background: #fafafa;
+}
+
+.site-footer__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #666;
+}

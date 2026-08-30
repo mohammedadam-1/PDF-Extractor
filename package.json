@@ -1,0 +1,10 @@
+{
+    "name": "PDF-Extractor",
+    "version": "1.0.",
+    "private": true,
+    "scripts": {
+        "setup": "cd UI/pdfExtractor_UI && npm install",
+        "build:frontend": "cd UI/pdfExtractor_UI && npm run build",
+        "deploy": "npm run build:frontend && cd Backend && uv run fastapi deploy"
+    }
+}

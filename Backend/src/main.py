@@ -5,45 +5,89 @@ import io
 from src.extractor.extract_text import extract_text      
 from src.save_data.convert_to_csv import convert_to_csv
 from src.utils import get_file_buffer 
+from fastapi.middleware.cors import CORSMiddleware
+from src.config.config import settings
+from pathlib import Path
+import pandas as pd
 
 app = FastAPI()
-@app.get("/")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_allowed_origins,
+    allow_credentials=True,
+    allow_methods=['GET', 'HEAD', 'OPTIONS', 'POST'],
+    allow_headers=["Authorization", "Accept", "Content-Type", "X-CSRF-Token", "Baggage", "X-Requested-With", "Sentry-Trace"],
+    max_age=86200,
+)
+
+
+@app.get("/home")
 async def health_check():
     return {"health": "ok"}
 
-@app.head("/")
-async def server():
-    return {"alive": True}
+# @app.head("/")
+# async def server():
+#     return {"alive": True}
 
 @app.post("/uploadfile")
 async def create_upload_file(file: UploadFile):
-    try:
-        if file.content_type != Filetype.pdf:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Upload a pdf file")
-        contents = await file.read()
-        file_size = len(contents)
-        max_size = 2_097_500  
-        if file_size > max_size:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Accepts file below 2 Mb")
-        data = extract_text.process_text(contents)
-        convert_to_csv.save_as_csv(rows_list=data, filename=file.filename)
-        await file.seek(0)
-        return {"filename": file.filename, "message": "File uploaded Successfully"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(e)
 
-class CSVStreamingResponse(StreamingResponse):
-    media_type = "text/csv"
+    if file.content_type != Filetype.pdf:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Upload a pdf file"
+        )
 
-@app.get("/downloadfile", response_class=CSVStreamingResponse)
-def download_file():
-    file_bytes = convert_to_csv.convert_df_to_bytes()
-    with get_file_buffer(fileBytes=file_bytes) as file_buffer:
-        for chunk in file_buffer:
-            yield chunk
+    contents = await file.read()
+
+    if len(contents) > 2_097_500:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Accepts file below 2 Mb"
+        )
+
+    data = extract_text.process_text(contents)
+
+    df = pd.DataFrame(data)
+
+    buffer = io.StringIO()
+
+    df.to_csv(
+        buffer,
+        header=False,
+        index=False
+    )
+
+    csv_bytes = buffer.getvalue().encode("utf-8")
+
+    filename = f"{Path(file.filename).stem}.csv"
+
+    return StreamingResponse(
+        io.BytesIO(csv_bytes),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition":
+                f'attachment; filename="{filename}"'
+        }
+    )
+
+# class CSVStreamingResponse(StreamingResponse):
+#     media_type = "text/csv"
+
+# @app.get("/downloadfile", response_class=CSVStreamingResponse)
+# def download_file():
+#     file_bytes = convert_to_csv.convert_df_to_bytes()
+#     with get_file_buffer(fileBytes=file_bytes) as file_buffer:
+#         for chunk in file_buffer:
+#             yield chunk
         
+        
+        
+backend_root = Path(__file__).resolve().parent.parent
+static_path = backend_root / "static_dist"
+
+
+app.frontend("/", directory=str(static_path))        
     
     
     
