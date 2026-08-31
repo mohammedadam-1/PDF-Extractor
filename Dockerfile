@@ -35,7 +35,7 @@ RUN uv sync --frozen --no-dev
 
 COPY Backend ./
 
-COPY --from=frontend-builder /frontend/dist /app/Backend/static-dist
+COPY --from=frontend-builder /frontend/dist /app/Backend/static_dist
 
 CMD ["sh", "-c", "uv run uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
 
