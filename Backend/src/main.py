@@ -47,7 +47,11 @@ async def create_upload_file(file: UploadFile):
         )
 
     data = extract_text.process_text(contents)
-
+    if not data:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to extract text from the PDF"
+        )   
     df = pd.DataFrame(data)
 
     buffer = io.StringIO()
